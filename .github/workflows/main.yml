@@ -1,20 +1,24 @@
-name: CI
-on:
-  # Trigger the workflow on push to the master branch
-  push:
-    branches:
-      - master
+name: Node.js CI
+
+on: [push]
+
 jobs:
   build:
+
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [8.x, 10.x, 12.x]
+
     steps:
-    - name: OpenShift Action
-      uses: redhat-developer/openshift-actions@v2.0
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
       with:
-        version: 'latest'
-        openshift_server_url: ${{ secrets.OPENSHIFT_SERVER_URL }}
-        parameters: '{"apitoken": "${{ secrets.API_TOKEN }}", "acceptUntrustedCerts": "true"}'
-        cmd: |
-          'version'
-          'start-build nodejs-ex --follow'
-          'status'
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - run: npm run build --if-present
+    - run: npm test
+      env:
+        CI: true
